@@ -5,8 +5,10 @@ second split -41.2 vs -56.9):
 per game, fit rank velocity over the last 12h of reads, diffuse the rank with a
 Gaussian random walk (sigma 1.0 ranks/sqrt(hour), momentum decay tau 24h), and
 average the rank distribution over horizons 0..72h. 28-day age expiry is
-applied when a game's created date is known (house-recorder reads). Only games
-on the last read's chart are forecast. Place probabilities are the
+applied when a game's created date is known (house-recorder reads). All games
+seen in the history stay candidates: a game that left the last read's chart
+can re-enter during the window (backtest: restricting to last-read games
+costs ~2.7 log points). Place probabilities are the
 window-averaged masses, normalised to leave an unnamed share of 0.2 per place
 for churn and new entrants.
 """
@@ -52,12 +54,6 @@ def main():
             d = det.get(str(uid)) or det.get(uid)
             if isinstance(d, dict) and d.get("created"):
                 created[uid] = parse_ts(d["created"])
-
-    # Only games on the last read's chart can be forecast: a game that has
-    # already left the chart gets no probability. (Earlier reads still feed
-    # each game's rank history and velocity.)
-    last_ids = {g["universe_id"] for g in reads[-1]["up_and_coming"]}
-    series = {uid: pts for uid, pts in series.items() if uid in last_ids}
 
     horizons = list(range(0, 73, 6))
     dists = {}
